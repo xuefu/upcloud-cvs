@@ -188,7 +188,7 @@ void get_user_name(char *user)
         sprintf(meta, "../%s", temp);
     }
     fp = fopen(meta, "r");
-    fgets(user, 16, fp);
+    fgets(user, 64, fp);
     char *ptr = strstr(user, "@");
     strcpy(user, ++ptr);
     fclose(fp);
@@ -206,7 +206,7 @@ void get_bucket_name(char *bucket)
         sprintf(meta, "../%s", temp);
     }
     fp = fopen(meta, "r");
-    fgets(bucket, 16, fp);
+    fgets(bucket, 64, fp);
     char *ptr = strstr(bucket, "@");
     *ptr = '\0';
     fclose(fp);

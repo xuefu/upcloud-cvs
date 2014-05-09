@@ -9,4 +9,5 @@ $ upc clone bucket_name@user_name
 $ upc add .
 $ upc push 
 
+$ upc usage
 ```

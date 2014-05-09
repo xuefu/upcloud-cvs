@@ -46,6 +46,27 @@ void upcloud_reset()
     printf("reset success!\n");
 }
 
+long get_bucket_usage(upyun_t *thiz, char *bucket)
+{
+    int status = 0;
+    upyun_ret_e ret = UPYUN_RET_OK;
+    upyun_usage_info_t bucket_usage;
+
+    char path[32] = "/";
+    strcat(path, bucket);
+    strcat(path, "/");
+
+    ret = upyun_get_usage(thiz, path, &bucket_usage, &status);
+
+    if(ret != UPYUN_RET_OK || status != 200)
+    {
+        printf("\nupyun_get_usage error.\n");
+        printf("status: %d\n", status);
+        exit(-1);
+    }
+    return bucket_usage.usage;
+}
+
 int main(int argc, char *argv[])
 {
     if(argc == 1)
@@ -101,6 +122,7 @@ int main(int argc, char *argv[])
         pull_bucket(tft);
 
 
+
         upyun_destroy(u);
     }
     /****************************/
@@ -132,11 +154,45 @@ int main(int argc, char *argv[])
     }
     /*********************************/
 
+    /* upd usage */
+
+    if(strcmp(argv[1], "usage") == 0)
+    {
+        long usage;
+        char user_name[64];
+        char bucket_name[64];
+        char password[64];
+
+        get_user_name(user_name);
+        get_bucket_name(bucket_name);
+        printf("user:  %s\n", user_name);
+        printf("bucket: %s\n", bucket_name);
+        printf("password: ");
+        scanf("%s", password);
+
+        upyun_global_init();
+        upyun_config_t conf = {0};
+        conf.user = user_name;
+        conf.passwd = password;
+        conf.endpoint = UPYUN_ED_AUTO;
+        conf.debug = 0;
+
+        upyun_t *u = upyun_create(&conf);
+        thiz = u;
+
+        usage = get_bucket_usage(thiz, bucket_name);
+        if(usage != -1)
+        {
+            printf("has been used space: %4.2f MB\n", (float)usage/1024.0/1024.0);
+        }
+    }
+
+    /*********************************/
     if(strcmp(argv[1], "push") == 0)
     {
-        char user_name[16];
-        char bucket_name[16];
-        char password[16];
+        char user_name[64];
+        char bucket_name[64];
+        char password[64];
 
         get_user_name(user_name);
         get_bucket_name(bucket_name);

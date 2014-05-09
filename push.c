@@ -114,12 +114,14 @@ void handle_added_file()
             content.u.fp = fopen(local_path, "rb");
             content.len = file_stat.st_size;
 
+            printf("uploading file %s...\n", local_path);
             ret = upyun_upload_file(thiz, temp, &content, NULL, NULL, &status);
             if(ret != UPYUN_RET_OK || status != 200)
             {
                 printf("upyun_upload_file %s error: %d\n", temp, ret);
                 printf("status: %d\n", status);
             }
+            printf("completed.\n");
             fclose(content.u.fp);
         }
     }
