@@ -3,4 +3,10 @@
 ## 安装方法
  *开发中...*
 ## 使用方法
- *开发中...*
+
+```
+$ upc clone bucket_name@user_name
+$ upc add .
+$ upc push 
+
+```

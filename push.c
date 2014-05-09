@@ -1,0 +1,127 @@
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <upyun.h>
+
+#include "push.h"
+
+void handle_removed_file()
+{
+    FILE *fp;
+    char removed_path[64] = ".upc";
+    char temp[64];
+    int len;
+    int status;
+    upyun_ret_e ret = UPYUN_RET_OK;
+
+    while(access(removed_path, F_OK) < 0)
+    {
+        strcpy(temp, removed_path);
+        sprintf(removed_path, "../%s", temp);
+    }
+    strcat(removed_path, "/removed");
+    fp = fopen(removed_path, "r");
+
+    while(fgets(temp, 64, fp) != NULL)
+    {
+        len = strlen(temp);
+        temp[--len] = '\0';
+        if(temp[len-1] != '/')// delete all the file
+        {
+            ret = upyun_get_fileinfo(thiz, temp, NULL, &status);
+            if(status == 404)
+            {
+                continue;
+            }
+
+            ret = upyun_remove_file(thiz, temp, &status);
+
+            if(ret != UPYUN_RET_OK || status != 200)
+            {
+                printf("\nupyun_remove_file %s error: %d\n", temp, ret);
+                printf("status: %d\n", status);
+            }
+        }
+    }
+
+    rewind(fp);
+    while(fgets(temp, 64, fp) != NULL)
+    {
+        len = strlen(temp);
+        temp[--len] = '\0';
+        if(temp[len-1] == '/') // delete all the directory
+        {
+            ret = upyun_remove_file(thiz, temp, &status);
+
+            if(ret != UPYUN_RET_OK || status != 200)
+            {
+                printf("\nupyun_remove_file %s error: %d\n", temp, ret);
+                printf("status: %d\n", status);
+            }
+
+        }
+    }
+    fclose(fp);
+}
+
+void handle_added_file()
+{
+    struct stat file_stat;
+    FILE *fp;
+    char added_path[64] = ".upc";
+    char temp[64];
+    int len;
+    int status;
+    upyun_ret_e ret = UPYUN_RET_OK;
+
+    while(access(added_path, F_OK) < 0)
+    {
+        strcpy(temp, added_path);
+        sprintf(added_path, "../%s", temp);
+    }
+    strcat(added_path, "/added");
+    fp = fopen(added_path, "r");
+
+    while(fgets(temp, 64, fp) != NULL)
+    {
+        len = strlen(temp);
+        temp[--len] = '\0';
+
+        if(temp[len-1] == '/')
+        {
+            ret = upyun_make_dir(thiz, temp, 0, &status); 
+
+            if(ret != UPYUN_RET_OK || status != 200)
+            {
+                printf("upyun_make_dir %s error: %d\n", temp, ret);
+                printf("status: %d\n", status);
+            }
+        } else {
+            ret = upyun_get_fileinfo(thiz, temp, NULL, &status);
+            if(status == 200)
+            {
+                printf("duplicate file %s\n", temp);
+                continue;
+            }
+            char *local_path = strpbrk(strpbrk(temp, "/") + 1, "/");
+            local_path++;
+            stat(local_path, &file_stat);
+            upyun_content_t content = {0};
+            content.type = UPYUN_CONTENT_FILE;
+            content.u.fp = fopen(local_path, "rb");
+            content.len = file_stat.st_size;
+
+            ret = upyun_upload_file(thiz, temp, &content, NULL, NULL, &status);
+            if(ret != UPYUN_RET_OK || status != 200)
+            {
+                printf("upyun_upload_file %s error: %d\n", temp, ret);
+                printf("status: %d\n", status);
+            }
+            fclose(content.u.fp);
+        }
+    }
+    fclose(fp);
+}
