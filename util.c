@@ -7,10 +7,12 @@
 
 #include "util.h"
 
-static char path_of_bucket[32];
-static char path_of_back[64];
+#define PATH_LEN 1024
 
-int parse_user_bucket(const char *user_bucket_info, char *user, char *bucket)
+static char path_of_back[PATH_LEN];
+
+/* parse the name of user and bucket from the argv like 'bucket_name@user_name' */
+static int parse_user_bucket(const char *user_bucket_info, char *user, char *bucket)
 {
     char *user_name;
     if((user_name=strstr(user_bucket_info, "@")) != NULL)
@@ -24,15 +26,13 @@ int parse_user_bucket(const char *user_bucket_info, char *user, char *bucket)
     return -1;
 }
 
-int save_user_bucket_info(const char *user_bucket_info, char *user, char *bucket)
+/* initial the local bucket */
+int init_local_bucket(const char *user_bucket_info, char *user, char *bucket)
 {
     FILE *fp;
-    char info[64];
-    char path[64];
+    char path[PATH_LEN];
 
-    strcpy(info, user_bucket_info);
-
-    if(parse_user_bucket(info, user, bucket))
+    if(parse_user_bucket(user_bucket_info, user, bucket))
         return -1;
 
     strcpy(path, bucket);
@@ -42,23 +42,27 @@ int save_user_bucket_info(const char *user_bucket_info, char *user, char *bucket
         return -1;
     }
 
+    /* make configuration directory of local bucket */
     strcat(path, "/.upc");
     if(mkdir(path, 0777) < 0)
     {
         perror("mkdir error: ");
         return -1;
     }
-    strcpy(path_of_bucket, path);
+
+    /* save the bucket_name@user_name to the file meta */
     strcat(path, "/meta");
     fp = fopen(path, "w");
     fwrite(user_bucket_info, sizeof(char), strlen(user_bucket_info), fp);
     fclose(fp);
+
     return 0;
 }
 
-void save_tree(tree_file_t *tft, FILE *fp)
+/* save path of the general tree to the file */
+static void save_tree(tree_file_t *tft, FILE *fp)
 {
-    char path[1024];
+    char path[PATH_LEN];
 
     int i, nchild;
     nchild = tft->nchild;
@@ -69,42 +73,47 @@ void save_tree(tree_file_t *tft, FILE *fp)
         fwrite(path, sizeof(char), strlen(path), fp);
         if(tft->type == 'D')
         {
-            save_tree(tft->child[i], fp);
+            save_tree(tft->child[i], fp); /* recursive calls */ 
         }
     }
 }
 
-void save_origin_tree(tree_file_t *tft)
+/* save the tree of remote bucket to local file */
+void save_origin_tree(tree_file_t *tft, char *bucket)
 {
     FILE *fp;
-    char origin[32];
-    strcpy(origin, path_of_bucket);
-    strcat(origin, "/origin");
-    fp = fopen(origin, "a");
+    char origin_path[PATH_LEN];
+    strcpy(origin_path, bucket);
+    strcat(origin_path, "/.upc/origin");
+    fp = fopen(origin_path, "a");
     save_tree(tft, fp);
     fclose(fp);
 }
 
+/* save the tree of remote bucket to local file after push stage */
 void push_origin_tree(tree_file_t *tft)
 {
     FILE *fp;
-    char origin[32] = ".upc/origin";
-    char temp[64];
+    char origin_path[PATH_LEN] = ".upc/origin";
+    char temp_path[PATH_LEN];
 
-    while(access(origin, F_OK) < 0)
+    while(access(origin_path, F_OK) < 0)
     {
-        strcpy(temp, origin);
-        sprintf(origin, "../%s", temp);
+        strcpy(temp_path, origin_path);
+        sprintf(origin_path, "../%s", temp_path);
     }
 
-    fp = fopen(origin, "w");
+    /* clear the content of the file origin */
+    fp = fopen(origin_path, "w");
     fclose(fp);
-    fp = fopen(origin, "a");
+
+    fp = fopen(origin_path, "a");
     save_tree(tft, fp);
     fclose(fp);
 }
 
-int exist_upc_dir()
+/* check whether the upc directory exists in the current directory */
+static int exist_upc_dir()
 {
     DIR *pDir;
     struct dirent *ent;
@@ -132,9 +141,10 @@ int exist_upc_dir()
     return 0;
 }
 
-void get_current_dir_name(char *dir_name)
+/* get the name of current directory */
+static void get_current_dir_name(char *dir_name)
 {
-    char absolute_path[1024];
+    char absolute_path[PATH_LEN];
     char *ptr;
     char *ptr2;
 
@@ -152,14 +162,16 @@ void get_current_dir_name(char *dir_name)
         ptr = strtok(NULL, "/");
     }
     strcpy(dir_name, ptr2);
+    /* change the current directory to the parent directory */
     chdir("..");
 }
 
+/* init the global value: path_of_back */
 void set_path_of_back()
 {
-    char current[1024];
-    char back_up[1024];
-    char absolute_path[1024];
+    char current[PATH_LEN];
+    char back_up[PATH_LEN];
+    char absolute_path[PATH_LEN];
 
     if(getcwd(absolute_path, sizeof(absolute_path)) == NULL)
         perror("get current directory error: ");
@@ -176,66 +188,76 @@ void set_path_of_back()
     chdir(absolute_path);
 }
 
-void get_user_name(char *user)
+/* get the user name from the config file meta */
+void get_user_name(char *user, int len)
 {
     FILE *fp;
-    char temp[64];
-    char meta[64] = ".upc/meta";
+    char temp_path[PATH_LEN];
+    char meta_path[PATH_LEN] = ".upc/meta";
 
-    while(access(meta, F_OK) < 0)
+    while(access(meta_path, F_OK) < 0)
     {
-        strcpy(temp, meta);
-        sprintf(meta, "../%s", temp);
+        strcpy(temp_path, meta_path);
+        sprintf(meta_path, "../%s", temp_path);
     }
-    fp = fopen(meta, "r");
-    fgets(user, 64, fp);
+    fp = fopen(meta_path, "r");
+    fgets(user, len, fp);
     char *ptr = strstr(user, "@");
     strcpy(user, ++ptr);
     fclose(fp);
 }
 
-void get_bucket_name(char *bucket)
+/* get the bucket name from the config file meta */
+void get_bucket_name(char *bucket, int len)
 {
     FILE *fp;
-    char temp[64];
-    char meta[64] = ".upc/meta";
+    char temp_path[PATH_LEN];
+    char meta_path[PATH_LEN] = ".upc/meta";
 
-    while(access(meta, F_OK) < 0)
+    while(access(meta_path, F_OK) < 0)
     {
-        strcpy(temp, meta);
-        sprintf(meta, "../%s", temp);
+        strcpy(temp_path, meta_path);
+        sprintf(meta_path, "../%s", temp_path);
     }
-    fp = fopen(meta, "r");
-    fgets(bucket, 64, fp);
+    fp = fopen(meta_path, "r");
+    fgets(bucket, len, fp);
     char *ptr = strstr(bucket, "@");
     *ptr = '\0';
     fclose(fp);
 }
 
+/* save all files of the local bucket to stage */
 void save_stage_tree(tree_file_t *tft)
 {
     FILE *fp;
-    char temp[64];
-    char stage[64] = ".upc";
-    while(access(stage, F_OK) < 0)
+    char temp_path[PATH_LEN];
+    char stage_path[PATH_LEN] = ".upc";
+    while(access(stage_path, F_OK) < 0)
     {
-        strcpy(temp, stage);
-        sprintf(stage, "../%s", temp);
+        strcpy(temp_path, stage_path);
+        sprintf(stage_path, "../%s", temp_path);
     }
 
-    strcat(stage, "/stage");
+    strcat(stage_path, "/stage");
 
-    fp = fopen(stage, "a");
-    if(strcmp(tft->path, path_of_back) != 0)
-    {
-        sprintf(temp, "%s\n", tft->path);
-        fwrite(temp, sizeof(char), strlen(temp), fp);
+    fp = fopen(stage_path, "a");
+    /* if the command is 'upc add .', we should not store
+     * the first path to stage
+     * */
+    if(strcmp(tft->path, path_of_back) != 0)    
+    /* for 'upc add <directory>' not 'upc add .' */
+    { 
+        sprintf(temp_path, "%s\n", tft->path);
+        fwrite(temp_path, sizeof(char), strlen(temp_path), fp);
     }
     save_tree(tft, fp);
     fclose(fp);
 }
 
-int dir_child_len(const char *dir)
+/* get the number of all files below one directory
+ * except '.', '..' and '.upc'
+ * */
+static int dir_child_len(const char *dir)
 {
     int nchild = 0;
     DIR *pDir;
@@ -244,7 +266,8 @@ int dir_child_len(const char *dir)
     pDir = opendir(dir);
     while((ent=readdir(pDir)) != NULL)
     {
-        if (strcmp(ent->d_name, ".upc")==0 || strcmp(ent->d_name, ".")==0 || strcmp(ent->d_name, "..")==0) 
+        if (strcmp(ent->d_name, ".upc")==0 || strcmp(ent->d_name, ".")==0
+                || strcmp(ent->d_name, "..")==0) 
         {
             continue; 
         }
@@ -256,10 +279,10 @@ int dir_child_len(const char *dir)
         printf("cant't close directory\n");
     }
 
-
     return nchild;
 }
 
+/* read all files of the local bucket and construct the general tree */
 void local_readdir(tree_file_t *tft, const char *dir)
 {
     int nchild; // the tft has n child
@@ -280,25 +303,30 @@ void local_readdir(tree_file_t *tft, const char *dir)
         tft->path = calloc(1, strlen(dir)+strlen(path_of_back)+2);
         sprintf(tft->path, "%s%s/", path_of_back, dir);
     }
+
     tft->date = file_stat.st_mtime;
     tft->type = 'D';
     tft->size = file_stat.st_size;
     tft->nchild = nchild;
-    //tft->child = calloc(1, nchild);
+    /* not only allocate *child but also **child.
+    * tft->child = calloc(1, nchild); 
+    * */
     tft->child = calloc(nchild, sizeof(tree_file_t *));
 
     nchild = 0;
     while ((ent=readdir(pDir)) != NULL) 
     {
-        if (ent->d_type & DT_DIR) 
+        if (ent->d_type & DT_DIR) /* directory */
         {
-            if (strcmp(ent->d_name, ".upc")==0 || strcmp(ent->d_name, ".")==0 || strcmp(ent->d_name, "..")==0) 
+            if (strcmp(ent->d_name, ".upc")==0 || strcmp(ent->d_name, ".")==0 
+                    || strcmp(ent->d_name, "..")==0) 
             {
                 continue; 
             }
             tree_file_t *new_dir = calloc(1, sizeof(tree_file_t));
             tft->child[nchild] = new_dir;
-            char *new_path; if(strcmp(dir, ".") == 0)
+            char *new_path;
+            if(strcmp(dir, ".") == 0)
             {
                 new_path = calloc(1, strlen(ent->d_name)+1);
                 strcpy(new_path, ent->d_name);
@@ -307,9 +335,9 @@ void local_readdir(tree_file_t *tft, const char *dir)
                 sprintf(new_path, "%s/%s", dir, ent->d_name);
             }
             new_dir->parent = tft;
-            local_readdir(new_dir, new_path);
+            local_readdir(new_dir, new_path); /* recursively calls */
             free(new_path);
-        } else {
+        } else { /* file */
             tree_file_t *new_file = calloc(1, sizeof(tree_file_t));
             char *new_path;
             if(strcmp(dir, ".") == 0)
@@ -342,22 +370,14 @@ void local_readdir(tree_file_t *tft, const char *dir)
     }
 }
 
-int is_dir(const char *dir)
-{
-    struct stat stat_info;
-    stat(dir, &stat_info);
 
-    if(S_ISDIR(stat_info.st_mode))
-        return 1;
-    return 0;
-}
-
+/* if 'upc add <file>', then call it to store the path to stage */
 void add_file_to_stage(const char *file)
 {
     FILE *fp;
-    char file_path[64];
-    char stage_path[64] = ".upc/stage";
-    char temp[64];
+    char file_path[PATH_LEN];
+    char stage_path[PATH_LEN] = ".upc/stage";
+    char temp_path[PATH_LEN];
 
     printf("%s\n", path_of_back);
     sprintf(file_path, "%s%s\n", path_of_back, file);
@@ -365,8 +385,8 @@ void add_file_to_stage(const char *file)
 
     while(access(stage_path, F_OK) < 0)
     {
-        strcpy(temp, stage_path);
-        sprintf(stage_path, "../%s", temp);
+        strcpy(temp_path, stage_path);
+        sprintf(stage_path, "../%s", temp_path);
     }
 
     fp = fopen(stage_path, "a");
@@ -374,16 +394,17 @@ void add_file_to_stage(const char *file)
     fclose(fp);
 }
 
+/* check whether the buf exists in the stage or not */
 int exist_in_stage(char *buf, char *stage_path)
 {
     FILE *fp_stage;
-    char temp[64];
+    char temp_path[PATH_LEN];
 
     fp_stage = fopen(stage_path, "r");
 
-    while(fgets(temp, 64, fp_stage) != NULL)
+    while(fgets(temp_path, PATH_LEN, fp_stage) != NULL)
     {
-        if(strcmp(temp, buf) == 0)
+        if(strcmp(temp_path, buf) == 0)
         {
             return 1;
         }
@@ -393,16 +414,17 @@ int exist_in_stage(char *buf, char *stage_path)
     return 0;
 }
 
+/* check whether the buf exists in the origin or not */
 int exist_in_origin(char *buf, char *origin_path)
 {
     FILE *fp_origin;
-    char temp[64];
+    char temp_path[PATH_LEN];
 
     fp_origin = fopen(origin_path, "r");
 
-    while(fgets(temp, 64, fp_origin) != NULL)
+    while(fgets(temp_path, PATH_LEN, fp_origin) != NULL)
     {
-        if(strcmp(temp, buf) == 0)
+        if(strcmp(temp_path, buf) == 0)
         {
             return 1;
         }
@@ -412,6 +434,7 @@ int exist_in_origin(char *buf, char *origin_path)
     return 0;
 }
 
+/* find out the changed file and store them in the added or removed */
 void current_changed_file()
 {
     FILE *fp_removed;
@@ -419,16 +442,16 @@ void current_changed_file()
     FILE *fp_stage;
     FILE *fp_added;
 
-    char stage_path[64];
-    char origin_path[64];
-    char removed_path[64] = ".upc";
-    char added_path[64];
-    char temp[64];
+    char stage_path[PATH_LEN];
+    char origin_path[PATH_LEN];
+    char removed_path[PATH_LEN] = ".upc";
+    char added_path[PATH_LEN];
+    char temp_path[PATH_LEN];
 
     while(access(removed_path, F_OK) < 0)
     {
-        strcpy(temp, removed_path);
-        sprintf(removed_path, "../%s", temp);
+        strcpy(temp_path, removed_path);
+        sprintf(removed_path, "../%s", temp_path);
     }
     strcpy(stage_path, removed_path);
     strcpy(origin_path, removed_path);
@@ -441,11 +464,12 @@ void current_changed_file()
     fp_origin = fopen(origin_path, "r");
     fp_removed = fopen(removed_path, "a");
 
-    while(fgets(temp, 64, fp_origin) != NULL)
+    /* store the deleted file to the removed */
+    while(fgets(temp_path, PATH_LEN, fp_origin) != NULL)
     {
-        if(!exist_in_stage(temp, stage_path))
+        if(!exist_in_stage(temp_path, stage_path))
         {
-            fwrite(temp, sizeof(char), strlen(temp), fp_removed);
+            fwrite(temp_path, sizeof(char), strlen(temp_path), fp_removed);
         }
     }
     fclose(fp_removed);
@@ -453,37 +477,69 @@ void current_changed_file()
 
     fp_stage = fopen(stage_path, "r");
     fp_added = fopen(added_path, "a");
-    while(fgets(temp, 64, fp_stage) != NULL)
+    /* store the added file to the added */
+    while(fgets(temp_path, PATH_LEN, fp_stage) != NULL)
     {
-        if(!exist_in_origin(temp, origin_path))
+        if(!exist_in_origin(temp_path, origin_path))
         {
-            fwrite(temp, sizeof(char), strlen(temp), fp_added);
+            fwrite(temp_path, sizeof(char), strlen(temp_path), fp_added);
         }
     }
     fclose(fp_added);
     fclose(fp_stage);
 }
 
-
-void general_readdir(tree_file_t *tft, const char *dir)
+void show_status()
 {
-    struct stat file_stat;
-    stat(".upc/stage", &file_stat);
-    if(file_stat.st_size != 0)
+    FILE *fp;
+    int n = 0;
+    char *ptr;
+    char upc_path[PATH_LEN] = ".upc";
+    char temp_path[PATH_LEN];
+    char buf[PATH_LEN];
+
+    set_path_of_back();
+
+    while(access(upc_path, F_OK) < 0)
     {
-        printf("The stage is not empty, please push or reset, then do it.\n");
-        exit(0);
+        strcpy(temp_path, upc_path);
+        sprintf(upc_path, "../%s", temp_path);
     }
-    if(is_dir(dir))
+    strcpy(temp_path, upc_path);
+    strcat(temp_path, "/added");
+
+    fp = fopen(temp_path, "r");
+    while(fgets(buf, PATH_LEN, fp) != NULL) n++;
+    rewind(fp);
+    printf("changes need to be pushed: \n"
+            "\t(\"upc clear\" can clear the stage)\n\n"
+            "%d files has been added to the stage:\n", n);
+    while(fgets(buf, PATH_LEN, fp) != NULL)
     {
-        set_path_of_back();
-        local_readdir(tft, dir);
-        save_stage_tree(tft);
-        current_changed_file();
-    } else {
-        set_path_of_back();
-        add_file_to_stage(dir);
-        current_changed_file();
+        ptr = buf + strlen(path_of_back);
+        printf("+\t%s", ptr);
     }
+    fclose(fp);
+
+    strcpy(temp_path, upc_path);
+    strcat(temp_path, "/removed");
+
+    n = 0;
+    fp = fopen(temp_path, "r");
+    while(fgets(buf, PATH_LEN, fp) != NULL) n++;
+    rewind(fp);
+    printf("%d files has been removed to the stage:\n", n);
+    while(fgets(buf, PATH_LEN, fp) != NULL)
+    {
+        ptr = buf + strlen(path_of_back);
+        printf("-\t%s", ptr);
+    }
+    fclose(fp);
+    /*
+    printf("\nchanges need to be add to the stage.\n"
+            "\t(\"upc add .\" can add to the stage)\n\n"
+            "\n");
+            */
 }
+
 

@@ -8,11 +8,12 @@
 
 #include "push.h"
 
+/* remotely remove the file tagged with removed in the stage */
 void handle_removed_file()
 {
     FILE *fp;
-    char removed_path[64] = ".upc";
-    char temp[64];
+    char removed_path[PATH_LEN] = ".upc";
+    char temp[PATH_LEN];
     int len;
     int status;
     upyun_ret_e ret = UPYUN_RET_OK;
@@ -25,7 +26,7 @@ void handle_removed_file()
     strcat(removed_path, "/removed");
     fp = fopen(removed_path, "r");
 
-    while(fgets(temp, 64, fp) != NULL)
+    while(fgets(temp, PATH_LEN, fp) != NULL)
     {
         len = strlen(temp);
         temp[--len] = '\0';
@@ -37,6 +38,7 @@ void handle_removed_file()
                 continue;
             }
 
+            printf("removing file %s ...\n", temp);
             ret = upyun_remove_file(thiz, temp, &status);
 
             if(ret != UPYUN_RET_OK || status != 200)
@@ -44,16 +46,18 @@ void handle_removed_file()
                 printf("\nupyun_remove_file %s error: %d\n", temp, ret);
                 printf("status: %d\n", status);
             }
+            printf("completed.\n");
         }
     }
 
     rewind(fp);
-    while(fgets(temp, 64, fp) != NULL)
+    while(fgets(temp, PATH_LEN, fp) != NULL)
     {
         len = strlen(temp);
         temp[--len] = '\0';
         if(temp[len-1] == '/') // delete all the directory
         {
+            printf("removing directory %s ...\n", temp);
             ret = upyun_remove_file(thiz, temp, &status);
 
             if(ret != UPYUN_RET_OK || status != 200)
@@ -71,8 +75,8 @@ void handle_added_file()
 {
     struct stat file_stat;
     FILE *fp;
-    char added_path[64] = ".upc";
-    char temp[64];
+    char added_path[PATH_LEN] = ".upc";
+    char temp[PATH_LEN];
     int len;
     int status;
     upyun_ret_e ret = UPYUN_RET_OK;
@@ -85,13 +89,14 @@ void handle_added_file()
     strcat(added_path, "/added");
     fp = fopen(added_path, "r");
 
-    while(fgets(temp, 64, fp) != NULL)
+    while(fgets(temp, PATH_LEN, fp) != NULL)
     {
         len = strlen(temp);
         temp[--len] = '\0';
 
         if(temp[len-1] == '/')
         {
+            printf("make directory %s ...\n", temp);
             ret = upyun_make_dir(thiz, temp, 0, &status); 
 
             if(ret != UPYUN_RET_OK || status != 200)
@@ -99,6 +104,7 @@ void handle_added_file()
                 printf("upyun_make_dir %s error: %d\n", temp, ret);
                 printf("status: %d\n", status);
             }
+            printf("completed.\n");
         } else {
             ret = upyun_get_fileinfo(thiz, temp, NULL, &status);
             if(status == 200)
@@ -114,7 +120,7 @@ void handle_added_file()
             content.u.fp = fopen(local_path, "rb");
             content.len = file_stat.st_size;
 
-            printf("uploading file %s...\n", local_path);
+            printf("uploading file %s ...\n", local_path);
             ret = upyun_upload_file(thiz, temp, &content, NULL, NULL, &status);
             if(ret != UPYUN_RET_OK || status != 200)
             {

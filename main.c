@@ -8,42 +8,51 @@
 #include "util.h"
 #include "push.h"
 
+#define NAME_LEN 32
+
 upyun_t *thiz = NULL;
 
 void upcloud_usage()
 {
     printf("usage: upc [--version] [--help] \n \t   <command> [<args>]\n");
-    printf("最常用的upc命令有:\n");
+    printf("最常用的upc命令有:\n" 
+           "\tupc clone bucket_name@user_name\n"
+           "\tupc add <file|directory>\n"
+           "\tupc rm <file|directory>\n"
+           "\tupc push\n"
+           "\tupc update <file|directory>\n"
+           "\tupc log\n"
+           "\tupc status\n"
+           "\tupc clear\n"
+           "\tupc reset\n");
 }
 
-void upcloud_reset()
+void upcloud_clear_stage()
 {
-    char upc_path[64] = ".upc";
-    char stage_path[64];
-    char added_path[64];
-    char removed_path[64];
-    char temp[64];
+    FILE *fp;
+    char upc_path[PATH_LEN] = ".upc";
+    char temp_path[PATH_LEN];
 
     while(access(".upc", F_OK) < 0)
     {
-        strcpy(temp, upc_path);
-        sprintf(upc_path, "../%s", temp);
+        strcpy(temp_path, upc_path);
+        sprintf(upc_path, "../%s", temp_path);
     }
 
-    strcpy(stage_path, upc_path);
-    strcpy(added_path, upc_path);
-    strcpy(removed_path, upc_path);
-    strcat(stage_path, "/stage");
-    strcat(added_path, "/added");
-    strcat(removed_path, "/removed");
-    FILE *fp = fopen(stage_path, "w");
-    fclose(fp);
-    fp = fopen(added_path, "w");
-    fclose(fp);
-    fp = fopen(removed_path, "w");
+    strcpy(temp_path, upc_path);
+    strcat(temp_path, "/stage");
+    fp = fopen(temp_path, "w");
     fclose(fp);
 
-    printf("reset success!\n");
+    strcpy(temp_path, upc_path);
+    strcat(temp_path, "/added");
+    fp = fopen(temp_path, "w");
+    fclose(fp);
+
+    strcpy(temp_path, upc_path);
+    strcat(temp_path, "/removed");
+    fp = fopen(temp_path, "w");
+    fclose(fp);
 }
 
 long get_bucket_usage(upyun_t *thiz, char *bucket)
@@ -52,7 +61,7 @@ long get_bucket_usage(upyun_t *thiz, char *bucket)
     upyun_ret_e ret = UPYUN_RET_OK;
     upyun_usage_info_t bucket_usage;
 
-    char path[32] = "/";
+    char path[NAME_LEN] = "/";
     strcat(path, bucket);
     strcat(path, "/");
 
@@ -65,6 +74,39 @@ long get_bucket_usage(upyun_t *thiz, char *bucket)
         exit(-1);
     }
     return bucket_usage.usage;
+}
+
+/* check whether a directory or file */
+int is_dir(const char *dir)
+{
+    struct stat stat_info;
+    stat(dir, &stat_info);
+
+    if(S_ISDIR(stat_info.st_mode))
+        return 1;
+    return 0;
+}
+
+void update_stage(tree_file_t *tft, const char *dir)
+{
+    struct stat file_stat;
+    stat(".upc/stage", &file_stat);
+    if(file_stat.st_size != 0)
+    {
+        printf("The stage is not empty, please push or reset, then do it.\n");
+        exit(0);
+    }
+    if(is_dir(dir))
+    {
+        set_path_of_back();
+        local_readdir(tft, dir);
+        save_stage_tree(tft);
+        current_changed_file();
+    } else {
+        set_path_of_back();
+        add_file_to_stage(dir);
+        current_changed_file();
+    }
 }
 
 int main(int argc, char *argv[])
@@ -84,14 +126,14 @@ int main(int argc, char *argv[])
             exit(0);
         }
 
-        char user_name[32];
-        char bucket_name[32];
+        char user_name[NAME_LEN];
+        char bucket_name[NAME_LEN];
 
-        if(save_user_bucket_info(argv[2], user_name, bucket_name) < 0)
+        if(init_local_bucket(argv[2], user_name, bucket_name) < 0)
             return -1;
 
         int len = strlen(bucket_name);
-        char passwd[16];
+        char passwd[NAME_LEN];
         printf("username:   %s\n", user_name);
         printf("bucketname: %s\n", bucket_name);
         printf("password:   ");
@@ -106,6 +148,10 @@ int main(int argc, char *argv[])
 
         upyun_t *u = upyun_create(&conf);
         thiz = u;
+        if(upyun_set_timeout(thiz, 10) != UPYUN_RET_OK)
+        {
+            printf("upyun set time out failed.\n");
+        }
 
         tree_file_t *tft = calloc(1, sizeof(tree_file_t));
 
@@ -117,11 +163,9 @@ int main(int argc, char *argv[])
 
         bucket_readdir(tft, prefix);
 
-        save_origin_tree(tft);
+        save_origin_tree(tft, bucket_name);
 
         pull_bucket(tft);
-
-
 
         upyun_destroy(u);
     }
@@ -136,21 +180,21 @@ int main(int argc, char *argv[])
             exit(0);
         }
         tree_file_t *tft = calloc(1, sizeof(tree_file_t));
-        char arg[32];
+        char arg[NAME_LEN];
         int len;
         strcpy(arg, argv[2]);
         len = strlen(arg);
         if(arg[len-1] == '/')
             arg[len-1] = '\0';
 
-        general_readdir(tft, arg);
+        update_stage(tft, arg);
     }
     /************************/
 
     /* upc reset */
-    if(strcmp(argv[1], "reset") == 0)
+    if(strcmp(argv[1], "clear") == 0)
     {
-        upcloud_reset();
+        upcloud_clear_stage();
     }
     /*********************************/
 
@@ -159,12 +203,12 @@ int main(int argc, char *argv[])
     if(strcmp(argv[1], "usage") == 0)
     {
         long usage;
-        char user_name[64];
-        char bucket_name[64];
-        char password[64];
+        char user_name[NAME_LEN];
+        char bucket_name[NAME_LEN];
+        char password[NAME_LEN];
 
-        get_user_name(user_name);
-        get_bucket_name(bucket_name);
+        get_user_name(user_name, NAME_LEN);
+        get_bucket_name(bucket_name, NAME_LEN);
         printf("user:  %s\n", user_name);
         printf("bucket: %s\n", bucket_name);
         printf("password: ");
@@ -190,12 +234,12 @@ int main(int argc, char *argv[])
     /*********************************/
     if(strcmp(argv[1], "push") == 0)
     {
-        char user_name[64];
-        char bucket_name[64];
-        char password[64];
+        char user_name[NAME_LEN];
+        char bucket_name[NAME_LEN];
+        char password[NAME_LEN];
 
-        get_user_name(user_name);
-        get_bucket_name(bucket_name);
+        get_user_name(user_name, NAME_LEN);
+        get_bucket_name(bucket_name, NAME_LEN);
         printf("user:  %s\n", user_name);
         printf("bucket: %s\n", bucket_name);
         printf("password: ");
@@ -214,7 +258,7 @@ int main(int argc, char *argv[])
         handle_removed_file();
         handle_added_file();
 
-        upcloud_reset();
+        upcloud_clear_stage();
 
         tree_file_t *tft = calloc(1, sizeof(tree_file_t));
 
@@ -230,6 +274,11 @@ int main(int argc, char *argv[])
         push_origin_tree(tft);
 
         upyun_destroy(u);
+    }
+
+    if(strcmp(argv[1], "status") == 0)
+    {
+        show_status();
     }
     return 0;
 }

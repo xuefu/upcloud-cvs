@@ -4,13 +4,17 @@
 #include "pull.h"
 
 
-int save_user_bucket_info(const char *user_bucket_info, char *user, char *bucket);
-void save_origin_tree(tree_file_t *tft);
+int init_local_bucket(const char *user_bucket_info, char *user, char *bucket);
+void save_origin_tree(tree_file_t *tft, char *bucket);
 void push_origin_tree(tree_file_t *tft);
 void set_path_of_back();
-void get_user_name(char *user);
-void get_bucket_name(char *bucket);
+void get_user_name(char *user, int len);
+void get_bucket_name(char *bucket, int len);
 void save_stage_tree(tree_file_t *tft);
-void general_readdir(tree_file_t *tft, const char *dir);
+void local_readdir(tree_file_t *tft, const char *dir);
+void current_changed_file();
+void add_file_to_stage(const char *file);
+void show_status();
+
 
 #endif
