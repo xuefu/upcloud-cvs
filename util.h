@@ -1,20 +1,25 @@
-#ifndef _UTIL_H
-#define _UTIL_H
+#ifndef _STAGE_H_
+#define _STAGE_H_
 
-#include "pull.h"
+#include "util.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <dirent.h>
 
-int init_local_bucket(const char *user_bucket_info, char *user, char *bucket);
-void save_origin_tree(tree_file_t *tft, char *bucket);
-void push_origin_tree(tree_file_t *tft);
-void set_path_of_back();
+#define PATH_LEN 1024
+
+/* get the user name from the config file meta */
 void get_user_name(char *user, int len);
-void get_bucket_name(char *bucket, int len);
-void save_stage_tree(tree_file_t *tft);
-void local_readdir(tree_file_t *tft, const char *dir);
-void current_changed_file();
-void add_file_to_stage(const char *file);
-void show_status();
 
+/* get the bucket name from the config file meta */
+void get_bucket_name(char *bucket, int len);
+
+int exist_upc_dir(const char *path);
+
+/* get the path of backup */
+void get_path_of_back(char *path);
 
 #endif

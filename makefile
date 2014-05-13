@@ -3,8 +3,8 @@ LDFLAGS = -lupyun -lcurl
 
 all: upc
 
-upc: pull.o util.o main.o push.o
+upc: pull.o util.o main.o push.o stage.o
 	$(CC) -g -o $@ $+ $(LDFLAGS) 
 
 clean: 
-	rm -f pull.o util.o main.o push.o upc
+	rm -f pull.o util.o main.o push.o stage.o upc
