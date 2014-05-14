@@ -1,0 +1,7 @@
+#!/bin/bash
+
+sudo apt-get install libcurl4-openssl-dev
+cd sdk
+make 
+sudo cp libupyun.so /usr/lib/
+sudo cp upyun.h /usr/include/
