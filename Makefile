@@ -3,14 +3,18 @@ LDFLAGS = -lupyun -lcurl
 
 all: upc
 
-upc: pull.o util.o main.o push.o stage.o
+upc: pull.o util.o main.o push.o stage.o color.o
 	$(CC) -o $@ $+ $(LDFLAGS) 
 
 install:
-	sudo cp upc /usr/bin/
+	@(sudo cp upc /usr/bin/)
+	@echo "installing upc ..."
+	@echo "Finished!"
 
 uninstall:
-	sudo rm /usr/bin/upc
+	@(sudo rm /usr/bin/upc)
+	@echo "uninstalling upc ..."
+	@echo "Finished!"
 
 clean: 
-	rm -f pull.o util.o main.o push.o stage.o upc
+	@(rm -f pull.o util.o main.o push.o stage.o color.o upc)
