@@ -123,7 +123,6 @@ void handle_added_file()
         continue;
       }
       char *local_path = temp + strlen(path_of_back);
-      printf("%s\n", local_path);
       stat(local_path, &file_stat);
       upyun_content_t content = {0};
       content.type = UPYUN_CONTENT_FILE;
