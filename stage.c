@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "stage.h"
+#include "color.h"
 
 /* save path of the general tree to the file */
 static void save_tree(tree_file_t *tft, FILE *fp)
@@ -381,13 +382,25 @@ void show_status()
   while(fgets(buf, PATH_LEN, fp) != NULL) n++;
   rewind(fp);
   printf("changes need to be pushed: \n"
-      "\t(\"upc clear\" can clear the stage)\n\n"
+      "\t(\"upc reset\" can reset the stage)\n\n"
       "%d files has been added to the stage:\n", n);
   while(fgets(buf, PATH_LEN, fp) != NULL)
   {
-    //   ptr = buf + strlen(path_of_back);
-    printf("+\t%s", buf);
+    n = strlen(buf);
+
+    if(buf[n-2] == '/')
+    {
+      fg_green_color();
+      printf("\t+\t");
+      fg_blue_color();
+      printf("%s", buf);
+    } else {
+      fg_green_color();
+      printf("\t+\t%s", buf);
+    }
   }
+  printf("\n");
+  reset_color();
   fclose(fp);
 
   strcpy(temp_path, upc_path);
@@ -400,13 +413,25 @@ void show_status()
   printf("%d files has been removed to the stage:\n", n);
   while(fgets(buf, PATH_LEN, fp) != NULL)
   {
-    //  ptr = buf + strlen(path_of_back);
-    printf("-\t%s", buf);
+    n = strlen(buf);
+
+    if(buf[n-2] == '/')
+    {
+      fg_red_color();
+      printf("\t-\t");
+      fg_blue_color();
+      printf("%s", buf);
+    } else {
+      fg_red_color();
+      printf("\t-\t%s", buf);
+    }
   }
+  printf("\n");
+  reset_color();
   fclose(fp);
   /*
-  printf("\nchanges need to be added to the stage.\n"
-      "\t(\"upc add .\" can add to the stage)\n\n"
-      "\n");
-      */
+     printf("\nchanges need to be added to the stage.\n"
+     "\t(\"upc add .\" can add to the stage)\n\n"
+     "\n");
+     */
 }
