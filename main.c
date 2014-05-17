@@ -180,11 +180,10 @@ int main(int argc, char *argv[])
       return -1;
 
     int len = strlen(bucket_name);
-    char password[NAME_LEN];
+    char *password;
     printf("username:   %s\n", user_name);
     printf("bucketname: %s\n", bucket_name);
-    printf("password:   ");
-    scanf("%s", password);
+    password = getpass("Enter password: ");
 
     upyun_global_init();
     upyun_config_t conf = {0};
@@ -252,14 +251,13 @@ int main(int argc, char *argv[])
     long usage;
     char user_name[NAME_LEN];
     char bucket_name[NAME_LEN];
-    char password[NAME_LEN];
+    char *password;
 
     get_user_name(user_name, NAME_LEN);
     get_bucket_name(bucket_name, NAME_LEN);
-    printf("user:  %s\n", user_name);
-    printf("bucket: %s\n", bucket_name);
-    printf("password: ");
-    scanf("%s", password);
+    printf("username:   %s\n", user_name);
+    printf("bucketname: %s\n", bucket_name);
+    password = getpass("Enter password: ");
 
     upyun_global_init();
     upyun_config_t conf = {0};
@@ -283,14 +281,13 @@ int main(int argc, char *argv[])
   {
     char user_name[NAME_LEN];
     char bucket_name[NAME_LEN];
-    char password[NAME_LEN];
+    char *password;
 
     get_user_name(user_name, NAME_LEN);
     get_bucket_name(bucket_name, NAME_LEN);
     printf("username:   %s\n", user_name);
     printf("bucketname: %s\n", bucket_name);
-    printf("password:   ");
-    scanf("%s", password);
+    password = getpass("Enter password: ");
 
     upyun_global_init();
     upyun_config_t conf = {0};
