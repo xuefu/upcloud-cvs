@@ -12,6 +12,9 @@ void fg_blue_color();
 /* set green color */
 void fg_green_color();
 
+/* set purple color */
+void fg_purple_color();
+
 /* reset origin color */
 void reset_color();
     

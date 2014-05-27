@@ -15,6 +15,11 @@ void fg_green_color()
     printf("\033[0m\033[32m");
 }
 
+void fg_purple_color()
+{
+  printf("\033[0m\033[35m");
+}
+
 void reset_color()
 {
     printf("\033[0m");
