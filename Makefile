@@ -3,7 +3,7 @@ LDFLAGS = -lupyun -lcurl
 
 all: upc
 
-upc: pull.o util.o main.o push.o stage.o color.o
+upc: pull.o util.o main.o push.o stage.o color.o md5_file.o
 	$(CC) -o $@ $+ $(LDFLAGS) 
 
 install:
@@ -17,4 +17,4 @@ uninstall:
 	@echo "Finished!"
 
 clean: 
-	@(rm -f pull.o util.o main.o push.o stage.o color.o upc)
+	@(rm -f pull.o util.o main.o push.o stage.o color.o md5_file.o upc)
