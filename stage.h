@@ -7,7 +7,6 @@
 #define PATH_LEN 1024
 
 void save_origin_tree(tree_file_t *tft, char *bucket);
-void push_origin_tree(tree_file_t *tft);
 void save_stage_tree(tree_file_t *tft);
 void local_readdir(tree_file_t *tft, const char *dir, const char *path_of_back);
 void current_changed_file();
