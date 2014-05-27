@@ -29,9 +29,9 @@ void handle_removed_file()
 
   while(fgets(temp, PATH_LEN, fp) != NULL)
   {
+    get_path_md5(temp, temp, NULL);
     len = strlen(temp);
-    temp[--len] = '\0';
-    if(temp[len-1] != '/')// delete all the file
+    if(temp[len-1] != '\n')// delete all the file
     {
       ret = upyun_get_fileinfo(thiz, temp, NULL, &status);
       if(status == 404)
@@ -54,10 +54,11 @@ void handle_removed_file()
   rewind(fp);
   while(fgets(temp, PATH_LEN, fp) != NULL)
   {
+    get_path_md5(temp, temp, NULL);
     len = strlen(temp);
-    temp[--len] = '\0';
-    if(temp[len-1] == '/') // delete all the directory
+    if(temp[len-1] == '\n') // delete all the directory
     {
+      temp[len-1] = '\0';
       printf("removing directory %s ...\n", temp);
       ret = upyun_remove_file(thiz, temp, &status);
 
@@ -95,11 +96,12 @@ void handle_added_file()
 
   while(fgets(temp, PATH_LEN, fp) != NULL)
   {
+    get_path_md5(temp, temp, NULL);
     len = strlen(temp);
-    temp[--len] = '\0';
 
-    if(temp[len-1] == '/')
+    if(temp[len-1] == '\n')
     {
+      temp[len-1] = '\0';
       ret = upyun_get_fileinfo(thiz, temp, NULL, &status);
       if(status == 200)
       {
