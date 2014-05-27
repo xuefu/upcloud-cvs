@@ -20,10 +20,7 @@ void upcloud_usage()
   printf("最常用的upc命令有:\n" 
       "\tupc clone bucket_name@user_name\n"
       "\tupc add <file|directory>\n"
-      "\tupc rm <file|directory>\n"
       "\tupc push\n"
-      "\tupc update <file|directory>\n"
-      "\tupc log\n"
       "\tupc status\n"
       "\tupc reset\n");
 }
@@ -209,9 +206,10 @@ int main(int argc, char *argv[])
 
     bucket_readdir(tft, prefix);
 
-    save_origin_tree(tft, bucket_name);
 
     pull_bucket(tft);
+
+    save_origin_tree(tft, bucket_name);
 
     upyun_destroy(u);
   }
@@ -315,7 +313,9 @@ int main(int argc, char *argv[])
 
     bucket_readdir(tft, prefix);
 
-    push_origin_tree(tft);
+    change_dir();
+
+    save_origin_tree(tft, bucket_name);
 
     upyun_destroy(u);
   }
