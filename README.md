@@ -12,7 +12,7 @@
 ### upcloud-cvs安装
 
 ```
-$ git clone git://gitcafe.com/xuefu_zhang/upcloud-cvs-for-UPYUN.git
+$ git clone https://github.com/xuefu/upcloud-cvs.git
 $ make
 $ make install
 ```
