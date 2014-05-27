@@ -11,9 +11,8 @@ extern upyun_t *thiz;
 typedef struct tree_file_s
 {
   char *path;
-  time_t date;
   char type;
-  long size;
+  char *md5;
   int nchild;
 
   struct tree_file_s **child;

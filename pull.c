@@ -68,6 +68,11 @@ int init_local_bucket(const char *user_bucket_info, char *user, char *bucket)
   fp = fopen(temp_path, "w");
   fclose(fp);
 
+  strcpy(temp_path, path);
+  strcat(temp_path, "/modified");
+  fp = fopen(temp_path, "w");
+  fclose(fp);
+
   /* save the bucket_name@user_name to the file meta */
   strcat(path, "/meta");
   fp = fopen(path, "w");
@@ -123,8 +128,7 @@ void bucket_readdir(tree_file_t *tft, const char *prefix)
     if(item->file_type==1) /* item is directory */
     {
       tree_file_t *new_dir = calloc(1, sizeof(tree_file_t));
-      new_dir->date = item->date;
-      new_dir->size = item->file_size;
+      new_dir->md5 = NULL;
       tft->child[nchild] = new_dir;
 
       char *new_prefix;
@@ -140,9 +144,8 @@ void bucket_readdir(tree_file_t *tft, const char *prefix)
       char *new_prefix = calloc(1, strlen(prefix)+strlen(item->file_name)+1);
       sprintf(new_prefix, "%s%s", prefix, item->file_name);
       new_file->path = new_prefix;
-      new_file->date = item->date;
       new_file->type = 'F';
-      new_file->size = item->file_size;
+      new_file->md5 = NULL;
       new_file->nchild = 0;
       new_file->child = 0;
       new_file->parent = tft;
@@ -194,7 +197,7 @@ void pull_bucket(tree_file_t *tft)
       }
       printf("completed.\n");
     } else  { /* directory */
-      sprintf(path_download, "%s", ++(tft->child[i]->path));
+      sprintf(path_download, "%s", (tft->child[i]->path)+1);
       /* check whether the directory exists */
       if(access(path_download, F_OK) <  0)
       {
