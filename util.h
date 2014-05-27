@@ -12,6 +12,7 @@
 #include <termios.h>
 
 #define PATH_LEN 1024
+#define NAME_LEN 32
 #define	MAX_PASS_LEN 16		/* max #chars for user to enter */
 
 /* get the user name from the config file meta */
@@ -27,5 +28,11 @@ void get_path_of_back(char *path);
 
 /* get the password from the stdin and */
 char *getpass(const char *prompt);
+
+/* get the path and md5 : return 0 if no md5 , return 1 if md5 */
+int get_path_md5(char *from_str, char *path, char *md5);
+
+/* cd to the parent root path */
+void change_dir();
 
 #endif

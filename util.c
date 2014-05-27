@@ -89,8 +89,6 @@ static void get_current_dir_name(char *dir_name)
     ptr = strtok(NULL, "/");
   }
   strcpy(dir_name, ptr2);
-  /* change the current directory to the parent directory */
-  chdir("..");
 }
 
 /* get the path of backup */
@@ -107,6 +105,8 @@ void get_path_of_back(char *path)
   while(!exist_upc_dir("."))
   {
     get_current_dir_name(current);
+    /* change the current directory to the parent directory */
+    chdir("..");
     strcpy(back_up, path_of_back);
     sprintf(path_of_back, "/%s%s", current, back_up);
   }
@@ -155,3 +155,40 @@ char* getpass(const char *prompt)
   return(buf);
 }
 
+/* get the path and md5 : return 0 if no md5 , return 1 if md5 */
+int get_path_md5(char *from_str, char *path, char *md5)
+{
+  char *p;
+
+  p = strchr(from_str, ':');
+
+  if(p == NULL)
+    return 0;
+
+  *p++ = '\0';
+
+  if(path != NULL)
+    strcpy(path, from_str);
+  if(md5 != NULL)
+    strcpy(md5, p);
+
+  return 1;
+}
+
+/* cd to the parent root path */
+void change_dir()
+{
+  char current[PATH_LEN];
+  char bucket[NAME_LEN];
+
+  get_bucket_name(bucket, NAME_LEN);
+  get_current_dir_name(current);
+
+  while(strcmp(current, bucket) != 0)
+  {
+    chdir("..");   
+    get_current_dir_name(current);
+  }
+
+  chdir("..");   
+}
