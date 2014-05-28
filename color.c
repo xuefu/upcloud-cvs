@@ -1,3 +1,21 @@
+/*
+ * ===================================================================================
+ *
+ *      Filename: color.c
+ *
+ *   Description: 自定义标准输出字体顔色
+ *
+ *       Version: 1.0
+ *       Created: 2014/05/28 20:02:18
+ *      Revision: none
+ *      Compiler: gcc
+ *  
+ *        Author: xuefu
+ *  Organization: none
+ *
+ * ===================================================================================
+ */
+
 #include "color.h"
 
 void fg_red_color()

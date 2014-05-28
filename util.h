@@ -1,3 +1,21 @@
+/*
+ * ===================================================================================
+ *
+ *      Filename: util.h
+ *
+ *   Description: utilities functions
+ *
+ *       Version: 1.0
+ *       Created: 2014/05/28 20:02:18
+ *      Revision: none
+ *      Compiler: gcc
+ *  
+ *        Author: xuefu
+ *  Organization: none
+ *
+ * ===================================================================================
+ */
+
 #ifndef _STAGE_H_
 #define _STAGE_H_
 
@@ -34,5 +52,8 @@ int get_path_md5(char *from_str, char *path, char *md5);
 
 /* cd to the parent root path */
 void change_dir();
+
+/* test whether in the upc repo */
+int below_upc_repo();
 
 #endif

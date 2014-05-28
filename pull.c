@@ -1,3 +1,21 @@
+/*
+ * ===================================================================================
+ *
+ *      Filename: pull.c
+ *
+ *   Description: 下载云空间文件
+ *
+ *       Version: 1.0
+ *       Created: 2014/05/28 20:02:18
+ *      Revision: none
+ *      Compiler: gcc
+ *  
+ *        Author: xuefu
+ *  Organization: none
+ *
+ * ===================================================================================
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -97,7 +115,7 @@ static int bucket_dir_len(upyun_dir_item_t *item)
 }
 
 /* read all files of the bucket and construct the general tree */
-void bucket_readdir(tree_file_t *tft, const char *prefix)
+int bucket_readdir(tree_file_t *tft, const char *prefix)
 {
   int nchild; /* the tft has n childs */
 
@@ -105,11 +123,10 @@ void bucket_readdir(tree_file_t *tft, const char *prefix)
   upyun_dir_item_t *item = NULL;
   upyun_ret_e ret = upyun_read_dir(thiz, prefix, &item, &status);
 
-  if(ret != UPYUN_RET_OK || status != 200)
+  if(ret != UPYUN_RET_OK || (status != 200 && status == 401))
   {
-    printf("upyun_read_dir %s error: %d\n", prefix, ret);
-    printf("status: %d\n", status);
-    exit(0);
+    printf("Unauthorized...\n");
+    return -1;
   }
 
   nchild = bucket_dir_len(item);
@@ -155,6 +172,7 @@ void bucket_readdir(tree_file_t *tft, const char *prefix)
     nchild++;
   }
   upyun_dir_items_free(s_item);
+  return 0;
 }
 
 static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream)
@@ -182,7 +200,7 @@ void pull_bucket(tree_file_t *tft)
       if ((fp = fopen(path_download, "w")) == NULL )
       {
         printf("open file %s error\n", path_download );
-        exit(0);
+        return;
       }
       printf("downloading file %s...\n", path_download);
       ret = upyun_download_file(thiz, tft->child[i]->path, 

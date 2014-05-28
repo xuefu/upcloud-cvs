@@ -1,3 +1,21 @@
+/*
+ * ===================================================================================
+ *
+ *      Filename: pull.c
+ *
+ *   Description: 向云空间推送暂存区文件
+ *
+ *       Version: 1.0
+ *       Created: 2014/05/28 20:02:18
+ *      Revision: none
+ *      Compiler: gcc
+ *  
+ *        Author: xuefu
+ *  Organization: none
+ *
+ * ===================================================================================
+ */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>

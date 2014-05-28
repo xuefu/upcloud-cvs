@@ -1,3 +1,21 @@
+/*
+ * ===================================================================================
+ *
+ *      Filename: util.c
+ *
+ *   Description: utilities functions
+ *
+ *       Version: 1.0
+ *       Created: 2014/05/28 20:02:18
+ *      Revision: none
+ *      Compiler: gcc
+ *  
+ *        Author: xuefu
+ *  Organization: none
+ *
+ * ===================================================================================
+ */
+
 #include "util.h"
 
 
@@ -191,4 +209,25 @@ void change_dir()
   }
 
   chdir("..");   
+}
+
+int below_upc_repo()
+{
+  char current_path[PATH_LEN];
+  char absolute_path[PATH_LEN];
+
+  getcwd(absolute_path, sizeof(absolute_path));
+
+  while(!exist_upc_dir("."))
+  {
+    getcwd(current_path, sizeof(current_path));
+
+    if(chdir("..") == 0 || strcmp(current_path, "/") == 0)
+    {
+      chdir(absolute_path);
+      return 0;
+    }
+  } 
+  chdir(absolute_path);
+  return 1;
 }

@@ -1,3 +1,21 @@
+/*
+ * ===================================================================================
+ *
+ *      Filename: stage.h
+ *
+ *   Description: 更新暂存区
+ *
+ *       Version: 1.0
+ *       Created: 2014/05/28 20:02:18
+ *      Revision: none
+ *      Compiler: gcc
+ *  
+ *        Author: xuefu
+ *  Organization: none
+ *
+ * ===================================================================================
+ */
+
 #ifndef _UTIL_H
 #define _UTIL_H
 

@@ -1,3 +1,21 @@
+/*
+ * ===================================================================================
+ *
+ *      Filename: pull.h
+ *
+ *   Description: 向云空间推送暂存区文件
+ *
+ *       Version: 1.0
+ *       Created: 2014/05/28 20:02:18
+ *      Revision: none
+ *      Compiler: gcc
+ *  
+ *        Author: xuefu
+ *  Organization: none
+ *
+ * ===================================================================================
+ */
+
 #ifndef _PULL_H
 #define _PULL_H
 
@@ -23,7 +41,7 @@ typedef struct tree_file_s
 int init_local_bucket(const char *user_bucket_info, char *user, char *bucket);
 
 /* read all files of the bucket and construct the general tree */
-void bucket_readdir(tree_file_t *tft, const char *prefix);
+int bucket_readdir(tree_file_t *tft, const char *prefix);
 
 /* download all the file  according the general tree */
 void pull_bucket(tree_file_t *tft);
