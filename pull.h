@@ -3,7 +3,7 @@
  *
  *      Filename: pull.h
  *
- *   Description: 向云空间推送暂存区文件
+ *   Description: 下载云空间文件
  *
  *       Version: 1.0
  *       Created: 2014/05/28 20:02:18
