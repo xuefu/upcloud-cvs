@@ -3,7 +3,7 @@
 
 ## 演示
 
-![showtime](https://raw.githubusercontent.com/xuefu/upcloud-cvs/master/show.gif)
+![showtime](https://gitcafe.com/xuefu_zhang/upcloud-cvs-for-UPYUN/raw/master/show.gif)
 
 ## 安装方法
 
