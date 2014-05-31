@@ -42,5 +42,3 @@ $ upc usage  # 获取云空间已使用空间大小
 
 本项目基于MIT协议发布
 MIT: http://www.opensource.org/licenses/MIT
-
-*代码写的有点乱，欢迎提交bug !* 
