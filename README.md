@@ -3,7 +3,7 @@
 
 ## 演示
 
-![showtime](https://gitcafe.com/xuefu_zhang/upcloud-cvs-for-UPYUN/raw/master/show.gif)
+![showtime](https://raw.githubusercontent.com/xuefu/upcloud-cvs/master/show.gif)
 
 ## 安装方法
 
@@ -17,7 +17,7 @@
 ### upcloud-cvs安装
 
 ```
-$ git clone git://gitcafe.com/xuefu_zhang/upcloud-cvs-for-UPYUN.git
+$ git clone https://github.com/xuefu/upcloud-cvs.git
 $ make
 $ make install
 ```
